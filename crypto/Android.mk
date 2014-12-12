@@ -487,7 +487,6 @@ include $(LOCAL_PATH)/../android-config.mk
 LOCAL_SRC_FILES += $(local_src_files)
 LOCAL_CFLAGS += $(local_c_flags)
 LOCAL_C_INCLUDES += $(local_c_includes)
-LOCAL_LDLIBS += -lz
 ifeq ($(TARGET_ARCH),arm)
 	LOCAL_SRC_FILES += $(arm_src_files)
 	LOCAL_CFLAGS += $(arm_cflags)
@@ -501,7 +500,7 @@ ifeq ($(TARGET_SIMULATOR),true)
 endif
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE:= libcrypto
-include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)
 
 #######################################
 # host shared library
@@ -515,7 +514,7 @@ ifeq ($(WITH_HOST_DALVIK),true)
     LOCAL_LDLIBS += -ldl
     LOCAL_MODULE_TAGS := optional
     LOCAL_MODULE:= libcrypto
-    include $(BUILD_SHARED_LIBRARY)
+    include $(BUILD_STATIC_LIBRARY)
 endif
 
 ########################################

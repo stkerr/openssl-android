@@ -2,14 +2,15 @@ LOCAL_PATH:= $(call my-dir)
 
 arm_cflags := -DOPENSSL_BN_ASM_MONT -DAES_ASM -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM
 arm_src_files := \
-    aes/asm/aes-armv4.S \
-    bn/asm/armv4-mont.S \
-    sha/asm/sha1-armv4-large.S \
-    sha/asm/sha256-armv4.S \
-    sha/asm/sha512-armv4.S
+    aes/asm/aes-armv4.s \
+    bn/asm/armv4-mont.s \
+    sha/asm/sha1-armv4-large.s \
+    sha/asm/sha256-armv4.s \
+    sha/asm/sha512-armv4.s
 non_arm_src_files := aes/aes_core.c
 
 local_src_files := \
+	o_init.c \
 	cryptlib.c \
 	mem.c \
 	mem_clr.c \
@@ -22,6 +23,7 @@ local_src_files := \
 	o_time.c \
 	o_str.c \
 	o_dir.c \
+	$(wildcard $(LOCAL_PATH)/aes/*.c) \
 	aes/aes_cbc.c \
 	aes/aes_cfb.c \
 	aes/aes_ctr.c \
@@ -155,8 +157,10 @@ local_src_files := \
 	bn/bn_sqr.c \
 	bn/bn_sqrt.c \
 	bn/bn_word.c \
-	buffer/buf_err.c \
-	buffer/buffer.c \
+	$(wildcard $(LOCAL_PATH)/buffer/*.c) \
+	cmac/cmac.c \
+	cmac/cm_ameth.c \
+	cmac/cm_pmeth.c \
 	comp/c_rle.c \
 	comp/c_zlib.c \
 	comp/comp_err.c \
@@ -223,23 +227,7 @@ local_src_files := \
 	dso/dso_openssl.c \
 	dso/dso_vms.c \
 	dso/dso_win32.c \
-	ec/ec2_mult.c \
-	ec/ec2_smpl.c \
-	ec/ec_ameth.c \
-	ec/ec_asn1.c \
-	ec/ec_check.c \
-	ec/ec_curve.c \
-	ec/ec_cvt.c \
-	ec/ec_err.c \
-	ec/ec_key.c \
-	ec/ec_lib.c \
-	ec/ec_mult.c \
-	ec/ec_pmeth.c \
-	ec/ec_print.c \
-	ec/eck_prn.c \
-	ec/ecp_mont.c \
-	ec/ecp_nist.c \
-	ec/ecp_smpl.c \
+	$(wildcard $(LOCAL_PATH)/ec/*.c) \
 	ecdh/ech_err.c \
 	ecdh/ech_key.c \
 	ecdh/ech_lib.c \
@@ -313,10 +301,7 @@ local_src_files := \
 	md4/md4_one.c \
 	md5/md5_dgst.c \
 	md5/md5_one.c \
-	modes/cbc128.c \
-	modes/cfb128.c \
-	modes/ctr128.c \
-	modes/ofb128.c \
+	$(wildcard $(LOCAL_PATH)/modes/*.c) \
 	objects/o_names.c \
 	objects/obj_dat.c \
 	objects/obj_err.c \
@@ -380,24 +365,7 @@ local_src_files := \
 	rc4/rc4_skey.c \
 	ripemd/rmd_dgst.c \
 	ripemd/rmd_one.c \
-	rsa/rsa_ameth.c \
-	rsa/rsa_asn1.c \
-	rsa/rsa_chk.c \
-	rsa/rsa_eay.c \
-	rsa/rsa_err.c \
-	rsa/rsa_gen.c \
-	rsa/rsa_lib.c \
-	rsa/rsa_none.c \
-	rsa/rsa_null.c \
-	rsa/rsa_oaep.c \
-	rsa/rsa_pk1.c \
-	rsa/rsa_pmeth.c \
-	rsa/rsa_prn.c \
-	rsa/rsa_pss.c \
-	rsa/rsa_saos.c \
-	rsa/rsa_sign.c \
-	rsa/rsa_ssl.c \
-	rsa/rsa_x931.c \
+	$(wildcard $(LOCAL_PATH)/rsa/*.c) \
 	sha/sha1_one.c \
 	sha/sha1dgst.c \
 	sha/sha256.c \
@@ -471,11 +439,16 @@ local_src_files := \
 	x509v3/v3err.c
 
 local_c_includes := \
-	$(NDK_PROJECT_PATH) \
-	$(NDK_PROJECT_PATH)/crypto/asn1 \
-	$(NDK_PROJECT_PATH)/crypto/evp \
-	$(NDK_PROJECT_PATH)/include \
-	$(NDK_PROJECT_PATH)/include/openssl
+	openssl \
+	crypto \
+	crypto/asn1 \
+	crypto/evp \
+	crypto/modes \
+	openssl/include \
+	openssl/include/openssl \
+	zlib \
+	. \
+	include 
 
 local_c_flags := -DNO_WINDOWS_BRAINDEATH
 
@@ -487,6 +460,7 @@ include $(LOCAL_PATH)/../android-config.mk
 LOCAL_SRC_FILES += $(local_src_files)
 LOCAL_CFLAGS += $(local_c_flags)
 LOCAL_C_INCLUDES += $(local_c_includes)
+LOCAL_SHARED_LIBRARIES += libz
 ifeq ($(TARGET_ARCH),arm)
 	LOCAL_SRC_FILES += $(arm_src_files)
 	LOCAL_CFLAGS += $(arm_cflags)
@@ -497,36 +471,10 @@ ifeq ($(TARGET_SIMULATOR),true)
 	# Make valgrind happy.
 	LOCAL_CFLAGS += -DPURIFY
     LOCAL_LDLIBS += -ldl
+else
+	LOCAL_SHARED_LIBRARIES += libdl
 endif
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE:= libcrypto
 include $(BUILD_STATIC_LIBRARY)
 
-#######################################
-# host shared library
-ifeq ($(WITH_HOST_DALVIK),true)
-    include $(CLEAR_VARS)
-    include $(LOCAL_PATH)/../android-config.mk
-    LOCAL_SRC_FILES += $(local_src_files)
-    LOCAL_CFLAGS += $(local_c_flags) -DPURIFY
-    LOCAL_C_INCLUDES += $(local_c_includes)
-    LOCAL_SRC_FILES += $(non_arm_src_files)
-    LOCAL_LDLIBS += -ldl
-    LOCAL_MODULE_TAGS := optional
-    LOCAL_MODULE:= libcrypto
-    include $(BUILD_STATIC_LIBRARY)
-endif
-
-########################################
-# host static library, which is used by some SDK tools.
-
-include $(CLEAR_VARS)
-include $(LOCAL_PATH)/../android-config.mk
-LOCAL_SRC_FILES += $(local_src_files)
-LOCAL_CFLAGS += $(local_c_flags) -DPURIFY
-LOCAL_C_INCLUDES += $(local_c_includes)
-LOCAL_SRC_FILES += $(non_arm_src_files)
-LOCAL_LDLIBS += -ldl
-LOCAL_MODULE_TAGS := optional
-LOCAL_MODULE:= libcrypto_static
-include $(BUILD_STATIC_LIBRARY)

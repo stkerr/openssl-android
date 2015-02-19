@@ -1,4 +1,4 @@
 NDK_TOOLCHAIN_VERSION=clang3.5
-APP_ABI := armeabi-v7s
+APP_ABI := arm64-v8a
 APP_PROJECT_PATH := $(shell pwd)
 APP_BUILD_SCRIPT := $(APP_PROJECT_PATH)/Android.mk

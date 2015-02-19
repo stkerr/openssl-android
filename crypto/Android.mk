@@ -23,7 +23,6 @@ local_src_files := \
 	o_time.c \
 	o_str.c \
 	o_dir.c \
-	$(wildcard $(LOCAL_PATH)/aes/*.c) \
 	aes/aes_cbc.c \
 	aes/aes_cfb.c \
 	aes/aes_ctr.c \
